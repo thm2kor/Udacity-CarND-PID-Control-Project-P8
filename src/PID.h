@@ -1,6 +1,6 @@
 #ifndef PID_H
 #define PID_H
-
+#include <vector>
 class PID {
  public:
   /**
@@ -30,7 +30,11 @@ class PID {
    * @output The total PID error
    */
   double TotalError();
-
+  /**
+   * Calculate the best possible values for control parameters .
+   * @output none
+   */
+  void Twiddle();
  private:
   /**
    * PID Errors
@@ -45,6 +49,18 @@ class PID {
   double Kp;
   double Ki;
   double Kd;
+  
+  /**
+   * hold the previous cte for calculating the p error
+   */ 
+  double prev_cte;
+  
+  /**
+   * class members for twiddle algorithm
+   */ 
+  std::vector<double> parameter; //parameter vector
+  std::vector<double> delta; //parameter delta vector
+
 };
 
 #endif  // PID_H
