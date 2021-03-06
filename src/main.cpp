@@ -60,7 +60,8 @@ int main( int argc, char *argv[] ) {
     }
   }
   std::cout << "Running PID controller with parameters " << parameters << std::endl;
-  PID pid_angle (parameters[0], parameters[1], parameters[2]);
+  PID pid_angle;
+  pid_angle.Init (parameters[0], parameters[1], parameters[2]);
   
   h.onMessage([&pid_angle, &twiddle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
                      uWS::OpCode opCode) {
