@@ -3,12 +3,20 @@
 #include <numeric>
 
 PID::PID() {
-  
+  Kp = 0.0;
+  Ki = 0.0;
+  Kd = 0.0;
+  prev_cte = 0.0;
+  // Initialize the errors
+  p_error = 0.0;
+  i_error = 0.0;
+  d_error = 0.0;
+  // Twiddle parameters
+  parameter = {0.0, 0.0, 0.0};
+  delta = {1.0, 1.0, 1.0};  
 }
 
-PID::~PID() {}
-
-void PID::Init(double Kp_, double Ki_, double Kd_) { //TODO: Why not move this to the constructor?
+PID::PID(double Kp_, double Ki_, double Kd_) { 
   // Initialise the gains. 
   Kp = Kp_;
   Ki = Ki_;
@@ -22,6 +30,8 @@ void PID::Init(double Kp_, double Ki_, double Kd_) { //TODO: Why not move this t
   parameter = {0.0, 0.0, 0.0};
   delta = {1.0, 1.0, 1.0};
 }
+
+PID::~PID() {}
 
 void PID::UpdateError(double cte) {
   // set the error for the proportional part
