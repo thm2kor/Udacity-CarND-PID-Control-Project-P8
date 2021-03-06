@@ -8,7 +8,7 @@ PID::PID() {
 
 PID::~PID() {}
 
-void PID::Init(double Kp_, double Ki_, double Kd_) {
+void PID::Init(double Kp_, double Ki_, double Kd_) { //TODO: Why not move this to the constructor?
   // Initialise the gains. 
   Kp = Kp_;
   Ki = Ki_;
