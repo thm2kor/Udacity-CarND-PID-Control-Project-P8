@@ -16,15 +16,6 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
-std::ostream& operator<<(std::ostream& strm, const std::vector<double> &d) {
-  strm << "[" ;
-  for (unsigned int i = 0; i<d.size(); i++) {
-    strm << d[i];
-    if (i != d.size() - 1)
-         strm << ", ";
-  } 
-  return strm << "]";
-}
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -45,7 +36,7 @@ string hasData(string s) {
 int main( int argc, char *argv[] ) {
   uWS::Hub h;
   bool twiddle = false;
-  if (argc == 2) { 
+  /*if (argc == 2) { 
     std::string flag = argv[1]; // check if we are in twiddle mode.
     if (flag.compare("--twiddle") == 0){
       twiddle = true;
@@ -53,15 +44,18 @@ int main( int argc, char *argv[] ) {
     }
   }
   //TODO Update after running twiddle algo.
-  std::vector<double> parameters = {0.1, 0.0, 2.0}; // default values. 
+  std::vector<double> parameters = {0.25, 0.002, 3.0}; // default values. 
   if (argc == 4) { // Simple check to see if the parameters are sent on command line
     for ( int i = 1 ; i < argc ; i++){
       parameters[i-1] = std::stod(argv[i]);
     }
   }
-  std::cout << "Running PID controller with parameters " << parameters << std::endl;
+  std::cout << "Running PID controller with parameters " << parameters << std::endl;*/
   PID pid_angle;
-  pid_angle.Init (parameters[0], parameters[1], parameters[2]);
+  //pid_angle.Init (parameters[0], parameters[1], parameters[2]);
+
+  pid_angle.Init (0.15, 0.0001, 3.0);
+  //pid_angle.Init (0.25, 0.002, 3.0);
   
   h.onMessage([&pid_angle, &twiddle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
                      uWS::OpCode opCode) {
@@ -81,25 +75,28 @@ int main( int argc, char *argv[] ) {
           double cte = std::stod(j[1]["cte"].get<string>());
           double speed = std::stod(j[1]["speed"].get<string>());
           double angle = std::stod(j[1]["steering_angle"].get<string>());
-          double steer_value = 0.0;
-          
+          double steer_value = 0.0;          
           // send the current cte to the PID object
           pid_angle.UpdateError(cte);
           // send the returned value to the simulator
-          steer_value -= pid_angle.TotalError();
+          steer_value = pid_angle.TotalError();
           // limit the steering value to [-1, 1]
           if (steer_value < -1) {
             steer_value = -1;
           } else if (steer_value > 1) {
             steer_value = 1;
+          }           
+          std::cout << cte << "," << speed << "," << steer_value << std::endl;
+          // Around the corners, the car goes out of control. 
+          // Attempt to reduce speed
+          double throttle = 0.3;
+          if (fabs(cte) > 1.0) { 
+            //std::cout << "Error too high :" << cte << std::endl;
+            throttle = 0.25;
           } 
-#ifdef DEBUG          
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value 
-                    << std::endl;
-#endif
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
 #ifdef DEBUG
           std::cout << msg << std::endl;
@@ -107,6 +104,7 @@ int main( int argc, char *argv[] ) {
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
           
           if (twiddle) { //https://knowledge.udacity.com/questions/6171
+            
             // reset the car position for every iteration in twiddle mode
             std::string msg("42[\"reset\", {}]");
             ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
