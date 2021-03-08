@@ -56,7 +56,8 @@ int main( int argc, char *argv[] ) {
 
   pid_angle.Init (0.15, 0.0001, 3.0);
   //pid_angle.Init (0.25, 0.002, 3.0);
-  
+  //last known good value 
+  //0.225, 0.0004, 4.0
   h.onMessage([&pid_angle, &twiddle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -86,13 +87,13 @@ int main( int argc, char *argv[] ) {
           } else if (steer_value > 1) {
             steer_value = 1;
           }           
-          std::cout << cte << "," << speed << "," << steer_value << std::endl;
+          // std::cout << cte << "," << speed << "," << steer_value <<  std::endl;
           // Around the corners, the car goes out of control. 
-          // Attempt to reduce speed
+          // Reduce speed to avoid the car going out of control
           double throttle = 0.3;
           if (fabs(cte) > 1.0) { 
             //std::cout << "Error too high :" << cte << std::endl;
-            throttle = 0.25;
+            throttle = 0.20;
           } 
           json msgJson;
           msgJson["steering_angle"] = steer_value;

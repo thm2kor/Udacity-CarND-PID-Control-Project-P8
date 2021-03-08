@@ -27,10 +27,15 @@ PID::PID() {
   d_error = 0.0;
   // Twiddle parameters
   best_err = std::numeric_limits<double>::max(); 
-  twiddle_mode = false;
+  twiddle_mode = true;
   curr_param_index = 0;
   current_err = 0.0;
   state = twiddle_state::init;
+  // Initialize the data for twiddle algo
+  parameter = {Kp, Ki, Kd};
+  //suggestion from https://knowledge.udacity.com/questions/312174
+  delta = {0.1 * Kp, 0.1 * Ki, 0.1 * Kd}; 
+
 }
 
 void PID::Init(double Kp_, double Ki_, double Kd_) {
@@ -45,7 +50,9 @@ void PID::Init(double Kp_, double Ki_, double Kd_) {
   d_error = 0.0;
   // Initialize the data for twiddle algo
   parameter = {Kp, Ki, Kd};
-  delta = {0.1 * Kp, 0.1 * Ki, 0.1 * Kd}; //Check if this is fine 
+  //suggestion from https://knowledge.udacity.com/questions/312174
+  delta = {0.1 * Kp, 0.1 * Ki, 0.1 * Kd}; 
+
   sample_size = 0;
   errs_accumalated  = 0;
 }
@@ -54,29 +61,33 @@ PID::~PID() {}
 
 // Update the error parameters
 void PID::UpdateError(double cte) {
-  /*std::cout << "Parameters : [" << Kp << ", " << Ki << ", " << Kd 
-            << "] Curr. error: " << current_err 
-            << " Best error: " << best_err << std::endl;*/
+
   // set the error for the proportional part
   p_error = cte;
   // set the error for the differential part
   d_error = cte - prev_cte;
-  // reset the prev_cte. 
+  // reset the prev_cte
   prev_cte = cte; 
   // set the error for integral part
   i_error += cte;
   
   if (twiddle_mode) {
+    std::cout << "Parameters : [" << Kp << ", " << Ki << ", " << Kd 
+          << "] Curr. error: " << current_err << std::endl;
+    
     sample_size++;
     // accumulate the errors for deriving the minimum error.
     // fabs to compensate the effect of positive and negative cte
     errs_accumalated += cte*cte; // fabs(cte);
     
-    if (sample_size % 50 == 0 ) {    
+    // twiddle every 500 samples
+    if (sample_size % 500 == 0 ) {   
+      
       double sum_delta = delta[0] + delta[1] + delta[2];
       current_err = errs_accumalated / sample_size;
+      
       //std::cout << "P-Index : " << curr_param_index << " Current Error : " << current_err << " Best Error : " << best_err << std::endl;
-      std::cout << "delta " << delta << " sum_delta : " << sum_delta << " TWIDDLE_THRESHOLD " << TWIDDLE_THRESHOLD << std::endl;
+      //std::cout << "delta " << delta << " sum_delta : " << sum_delta << " TWIDDLE_THRESHOLD " << TWIDDLE_THRESHOLD << std::endl;
       if ( sum_delta > TWIDDLE_THRESHOLD ) {      
         switch (state) {
           case twiddle_state::init:          
@@ -118,7 +129,12 @@ void PID::UpdateError(double cte) {
           default:
             break;
         } // end state check
-        Init(parameter[0], parameter[1], parameter[2]);
+        
+        Kp = parameter[0];
+        Ki = parameter[1];
+        Kd = parameter[2];
+        sample_size = 0;
+        errs_accumalated  = 0;
       }     
     } //end twiddle_mode check
   }
