@@ -4,16 +4,6 @@
 #include <numeric>
 #include <limits>
 
-std::ostream& operator<<(std::ostream& strm, const std::vector<double> &d) {
-  strm << "[" ;
-  for (unsigned int i = 0; i<d.size(); i++) {
-    strm << d[i];
-    if (i != d.size() - 1)
-         strm << ", ";
-  } 
-  return strm << "]";
-}
-
 // Initialize the controller with zero parameters.
 // Use the overloaded constructor for better results
 PID::PID() {
@@ -27,7 +17,7 @@ PID::PID() {
   d_error = 0.0;
   // Twiddle parameters
   best_err = std::numeric_limits<double>::max(); 
-  twiddle_mode = true;
+  twiddle_mode = false;
   curr_param_index = 0;
   current_err = 0.0;
   state = twiddle_state::init;
@@ -54,14 +44,13 @@ void PID::Init(double Kp_, double Ki_, double Kd_) {
   delta = {0.1 * Kp, 0.1 * Ki, 0.1 * Kd}; 
 
   sample_size = 0;
-  errs_accumalated  = 0;
+  err_accumulated  = 0;
 }
 
 PID::~PID() {}
 
 // Update the error parameters
 void PID::UpdateError(double cte) {
-
   // set the error for the proportional part
   p_error = cte;
   // set the error for the differential part
@@ -72,72 +61,9 @@ void PID::UpdateError(double cte) {
   i_error += cte;
   
   if (twiddle_mode) {
-    std::cout << "Parameters : [" << Kp << ", " << Ki << ", " << Kd 
-          << "] Curr. error: " << current_err << std::endl;
-    
-    sample_size++;
-    // accumulate the errors for deriving the minimum error.
-    // fabs to compensate the effect of positive and negative cte
-    errs_accumalated += cte*cte; // fabs(cte);
-    
-    // twiddle every 500 samples
-    if (sample_size % 500 == 0 ) {   
-      
-      double sum_delta = delta[0] + delta[1] + delta[2];
-      current_err = errs_accumalated / sample_size;
-      
-      //std::cout << "P-Index : " << curr_param_index << " Current Error : " << current_err << " Best Error : " << best_err << std::endl;
-      //std::cout << "delta " << delta << " sum_delta : " << sum_delta << " TWIDDLE_THRESHOLD " << TWIDDLE_THRESHOLD << std::endl;
-      if ( sum_delta > TWIDDLE_THRESHOLD ) {      
-        switch (state) {
-          case twiddle_state::init:          
-            best_err = current_err;  
-            parameter[curr_param_index] += delta[curr_param_index];
-            state = twiddle_state::param_incremented;
-            break;
-          case twiddle_state::param_incremented:
-            if (current_err < best_err) {
-              best_err = current_err;
-              delta[curr_param_index] *= 1.1;
-              //shift to next param index
-              curr_param_index = (curr_param_index + 1) % 3; 
-              parameter[curr_param_index] += delta[curr_param_index];
-              state = twiddle_state::param_incremented;
-            } else {
-              parameter[curr_param_index] -= 2*delta[curr_param_index];
-              if (parameter[curr_param_index] < 0) {
-                parameter[curr_param_index] = 0;
-                //shift to next param index
-                curr_param_index = (curr_param_index + 1) % 3; 
-              }
-              state = twiddle_state::param_decremented;
-            }
-            break;
-          case twiddle_state::param_decremented:
-            if (current_err < best_err) {
-              best_err = current_err;
-              delta[curr_param_index] *= 1.1;
-            } else {
-              parameter[curr_param_index] += delta[curr_param_index];
-              delta[curr_param_index] *= 0.9 ;
-            }
-            //shift to next param index
-            curr_param_index = (curr_param_index + 1) % 3; 
-            parameter[curr_param_index] += delta[curr_param_index];
-            state = twiddle_state::param_incremented;
-            break;
-          default:
-            break;
-        } // end state check
-        
-        Kp = parameter[0];
-        Ki = parameter[1];
-        Kd = parameter[2];
-        sample_size = 0;
-        errs_accumalated  = 0;
-      }     
-    } //end twiddle_mode check
-  }
+    Twiddle(cte);
+    std::cout << "Parameters [" << Kp << "," << Ki << "," << Kd << "] Error: " << current_err << std::endl;
+  } 
 }
 
 // Update the  product sum of gain and error
@@ -145,3 +71,64 @@ double PID::TotalError() {
   return -(p_error * Kp) - (i_error * Ki) - (d_error * Kd);  
 }
 
+// Adapt the parameters using the twiddle algorithm
+void PID::Twiddle(double cte) {   
+  sample_size++;
+  // accumulate the errors for deriving the minimum error.
+  // fabs to compensate the effect of positive and negative cte
+  err_accumulated += fabs(cte);  
+  // twiddle every 300 samples
+  if (sample_size % TWIDDLE_FREQ == 0 ) {      
+    current_err = err_accumulated / sample_size;
+    
+    switch (state) {
+      case twiddle_state::init:          
+        best_err = current_err;  
+        parameter[curr_param_index] += delta[curr_param_index];
+        state = twiddle_state::param_incremented;
+        break;
+        
+      case twiddle_state::param_incremented:
+        if (current_err < best_err) {
+          best_err = current_err;
+          delta[curr_param_index] *= 1.1;
+          //shift to next param index
+          curr_param_index = (curr_param_index + 1) % 3; 
+          parameter[curr_param_index] += delta[curr_param_index];
+          state = twiddle_state::param_incremented;
+        } else {
+          parameter[curr_param_index] -= 2*delta[curr_param_index];
+          if (parameter[curr_param_index] < 0) {
+            parameter[curr_param_index] = 0;
+            //shift to next param index
+            curr_param_index = (curr_param_index + 1) % 3; 
+          }
+          state = twiddle_state::param_decremented;
+        }
+        break;
+        
+      case twiddle_state::param_decremented:
+        if (current_err < best_err) {
+          best_err = current_err;
+          delta[curr_param_index] *= 1.1;
+        } else {
+          parameter[curr_param_index] += delta[curr_param_index];
+          delta[curr_param_index] *= 0.9 ;
+        }
+        //shift to next param index
+        curr_param_index = (curr_param_index + 1) % 3; 
+        parameter[curr_param_index] += delta[curr_param_index];
+        state = twiddle_state::param_incremented;
+        break;
+        
+      default:
+        break;
+    } // end state check
+    
+    Kp = parameter[0];
+    Ki = parameter[1];
+    Kd = parameter[2];
+    sample_size = 0;
+    err_accumulated  = 0;
+  }     
+}

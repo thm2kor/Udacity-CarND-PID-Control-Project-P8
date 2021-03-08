@@ -2,7 +2,7 @@
 #define PID_H
 #include <vector>
 
-static constexpr double TWIDDLE_THRESHOLD = 0.001; 
+static constexpr int TWIDDLE_FREQ = 300.; 
 enum twiddle_state {
   init = 0,
   param_incremented = 1,
@@ -36,6 +36,11 @@ class PID {
    */
   double TotalError();
   
+  /**
+   * Automatically adapt the PID parameter.
+   * @output adapted Kp, Kd and Ki
+   */
+  void Twiddle(double cte);
  private:
   /**
    * PID Errors
@@ -57,20 +62,21 @@ class PID {
   double prev_cte;
   
   /**
+   * class members relevant for twiddle algorithm
+   */   
+  twiddle_state state;      // state identifier
+  double err_accumulated;  // squared error accumulator 
+  int sample_size;          // sampple counter
+  int curr_param_index;     // current index of the parameter which is being adapted
+  double best_err;          
+  double current_err;
+  std::vector<double> parameter; //parameter vector
+  std::vector<double> delta; //parameter delta vector
+public:
+  /**
    * parameters for twiddle
    */ 
   bool twiddle_mode;
-  twiddle_state state;
-  double errs_accumalated;
-  int sample_size;
-  int curr_param_index;
-  double best_err; double current_err;
-  /**
-   * class members for twiddle algorithm
-   */ 
-  std::vector<double> parameter; //parameter vector
-  std::vector<double> delta; //parameter delta vector
-
 };
 
 #endif  // PID_H
