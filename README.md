@@ -6,8 +6,8 @@ Self-Driving Car Engineer Nanodegree Program
 
 [image1]: ./images/plot_cte_step1.jpg "Gain selection - Step 1"
 [image2]: ./images/plot_cte_step2.jpg "Gain selection - Step 2"
-[image2]: ./images/plot_cte_step3.jpg "Gain selection - Step 3"
-
+[image3]: ./images/plot_cte_step3.jpg "Gain selection - Step 3"
+[image4]: ./images/plot_cte_step4.jpg "Gain selection - Step 4"
 ---
 ## Objective
 The objective of this project is to develop a PID controller to maneuver a vehicle around a virtual track. Udacity provided a [simulator](https://github.com/udacity/self-driving-car-sim/releases) which sends a error component, the vehicle current speed (in mph) and current steering angle. The program has to calculate the optimum steering angle to keep the vehicle within the road. The PID controller needs to minimize the error so that the car stays on the trajectory
@@ -63,12 +63,21 @@ When the gain parameters are set to 0, the errors increases rapidly resulting in
 ![step1][image1]
 
 ### Step 2: Increase K<sub>p</sub> until the error is fairly small
-Keeping K<sub>i</sub> , K<sub>d</sub> as 0, the K<sub>p</sub> alone is adjusted till the car stays on course for a fair amount of time. The car was able to negotiate the first curve for K<sub>p</sub> between 0.1 and 0.2. The mean squared errors remained almost the same.
+Keeping K<sub>i</sub> , K<sub>d</sub> as 0, the K<sub>p</sub> alone was adjusted till the car stayed on course for a fair amount of time. The car was able to negotiate the first curve for K<sub>p</sub> between 0.1 and 0.2. The mean squared errors remained almost the same.
 ![step2][image2]
 
 ### Step 3: Increase K<sub>d</sub> until any overshoot is fairly minimal
 During the step, when the K<sub>d</sub> were configured between 0.2 and 0.3  the vehicle was able to cross the bridge and negotiate the subsequent left and rights turns with a difficult bit of difficulty.
 ![step3][image3]
+As shown in the above graph, the K<sub>d</sub> value of 0.3 resulted in the best minimization of the error. There were still some minor overstepping around the curves even with the best possible values of K<sub>d.
+
+### Step 4: Increase K<sub>i</sub> until any error that is still existing is eliminated.
+During this step, there was a slight improvement in the performance around the corners. But the values of K<sub>i</sub> were very sensitive to the changes.
+![step4][image4]
+As shown above, the best performance of the car was achieved when the K<sub>p</sub> , K<sub>i</sub> , K<sub>d</sub> were set to **0.15, 0.0001 and 3.0** respectively.
+
+### Step 5: Fine tunings the gains
+
 
 ---
 ## Dependencies
