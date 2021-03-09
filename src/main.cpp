@@ -93,12 +93,19 @@ int main( int argc, char *argv[] ) {
           } else if (steer_value > 1) {
             steer_value = 1;
           }
+          double throttle=0.4;
+          if (fabs(cte) > 1) {
+            throttle = 0.25;
+          } else {
+            throttle = fmin(1 / fabs(steer_value), 50);
+            throttle = ((1 - 0.45) * (throttle - 0)) / (50 - 0) + 1;
+          }
 #ifdef LOG_CTE
           std::cout << cte <<  std::endl;
 #endif
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
 #ifdef DEBUG
           std::cout << msg << std::endl;
