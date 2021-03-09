@@ -75,7 +75,7 @@ Since twiddle as a method for deriving the parameter is an optional step, it is 
 ```
 
 ## Results
-The results of the PID controller with **K<sub>p</sub> = 0.15, K<sub>i</sub> = 0.0001 and K<sub>p</sub> = 3.0** without twiddle algorithm could be found (here)[./images/result_pid_controller.mov]
+The results of the PID controller with **K<sub>p</sub> = 0.15, K<sub>i</sub> = 0.0001 and K<sub>p</sub> = 3.0** without twiddle algorithm could be found [here](./images/result_pid_controller.mov)
 
 ---
 ## Dependencies
