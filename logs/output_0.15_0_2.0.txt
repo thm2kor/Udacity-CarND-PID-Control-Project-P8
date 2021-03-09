@@ -1,4 +1,4 @@
-Running PID controller with parameters [0.1, 0, 2]
+Running PID controller with parameters [0.15, 0, 2]
 Listening to port 4567
 Connected!!!
 0.7598
