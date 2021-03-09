@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& strm, const std::vector<double> &d) {
     strm << d[i];
     if (i != d.size() - 1)
          strm << ", ";
-  } 
+  }
   return strm << "]";
 }
 
@@ -47,7 +47,7 @@ int main( int argc, char *argv[] ) {
   uWS::Hub h;
   PID pid_angle;
   // The application supports either ./pid --twiddle flag or  ./pid <Kp> <Ki> <Kd>
-  if (argc == 2) { 
+  if (argc == 2) {
     std::string flag = argv[1]; // check if we are in twiddle mode.
     if (flag.compare("--twiddle") == 0){
       pid_angle.twiddle_mode = true;
@@ -55,7 +55,7 @@ int main( int argc, char *argv[] ) {
     }
   }
   // default values. ./pid <Kp> <Ki> <Kd>
-  std::vector<double> parameters = {0.15, 0.0001, 3.0}; // default values. 
+  std::vector<double> parameters = {0.15, 0.0001, 3.0}; // default values.
   if (argc == 4) { // Simple check to see if the parameters are sent on command line
     for ( int i = 1 ; i < argc ; i++){
       parameters[i-1] = std::stod(argv[i]);
@@ -64,7 +64,7 @@ int main( int argc, char *argv[] ) {
   std::cout << "Running PID controller with parameters " << parameters << std::endl;
   //Initializing the parameters for the PID controller
   pid_angle.Init (parameters[0], parameters[1], parameters[2]);
-  h.onMessage([&pid_angle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, 
+  h.onMessage([&pid_angle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -82,19 +82,20 @@ int main( int argc, char *argv[] ) {
           double cte = std::stod(j[1]["cte"].get<string>());
           //double speed = std::stod(j[1]["speed"].get<string>());
           //double angle = std::stod(j[1]["steering_angle"].get<string>());
-          double steer_value = 0.0;          
+          double steer_value = 0.0;
           // send the current cte to the PID object
           pid_angle.UpdateError(cte);
           // send the returned value to the simulator
           steer_value = pid_angle.TotalError();
-          // limit the steering value to [-1, 1] 
+          // limit the steering value to [-1, 1]
           if (steer_value < -1) {
             steer_value = -1;
           } else if (steer_value > 1) {
             steer_value = 1;
           }
-          //std::cout << cte <<  std::endl;
-          
+#ifdef LOG_CTE
+          std::cout << cte <<  std::endl;
+#endif
           json msgJson;
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = 0.3;
@@ -116,7 +117,7 @@ int main( int argc, char *argv[] ) {
     std::cout << "Connected!!!" << std::endl;
   });
 
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, 
+  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
                          char *message, size_t length) {
     ws.close();
     std::cout << "Disconnected" << std::endl;
@@ -129,6 +130,6 @@ int main( int argc, char *argv[] ) {
     std::cerr << "Failed to listen to port" << std::endl;
     return -1;
   }
-  
+
   h.run();
 }
